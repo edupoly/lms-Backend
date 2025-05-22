@@ -252,14 +252,26 @@ app.put("/disburseloan/:id",adminauthenticate,async(req,res)=>{
         if (!updloan) {
             return res.json({ msg: "Loan not found" });
         }
-        var netLoanAmount = +(updloan.productcost)+((updloan.productcost)*(updloan.intrest.rateofintrest))/100;
-        var emiAmount =  Math.ceil((netLoanAmount-(updloan.downpayment))/updloan.intrest.tenure)
+        // var netLoanAmount = +(updloan.productcost)+((updloan.productcost)*(updloan.intrest.rateofintrest))/100;
+        // var emiAmount =  Math.ceil((netLoanAmount-(updloan.downpayment))/updloan.intrest.tenure)
+         var netLoanAmount = +(updloan.productcost) - (updloan.downpayment);
+        var emiAmount=Math.ceil(
+            netLoanAmount*((updloan.intrest.rateofintrest)/12/100)/(1-(Math.pow(1+(updloan.intrest.rateofintrest/12/100),-updloan.intrest.tenure)))
+        );
+         var  Interest=Math.ceil((netLoanAmount * updloan.intrest.rateofintrest) / 12 / 100);
+         var  Principal=Math.ceil(emiAmount - Interest);
+        console.log("netLoanAmount",netLoanAmount)
+        console.log("Intrestrate",Interest)
+        console.log("Principal",Principal)
+        console.log("emiAmount",emiAmount)
         var emiSchedule = [];
         for (let i = 1; i <= updloan.intrest.tenure; i++) {
             emiSchedule.push({
                 emiAmount,
                 emiDate: new Date(Date.now() + i * 30 * 24 * 60 * 60 * 1000),
-                emiStatus: "not paid"
+                emiStatus: "not paid",
+                  Principal,
+                Interest,
             });
         }
         await Loan.findOneAndUpdate(
